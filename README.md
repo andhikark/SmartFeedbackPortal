@@ -200,3 +200,7 @@ http://localhost:3000
 * RLS ensures strict data isolation
 * Service role key is only used inside n8n
 * No polling — all updates are real-time
+
+
+## Brief video 
+https://youtu.be/6hi_8oNswEg
