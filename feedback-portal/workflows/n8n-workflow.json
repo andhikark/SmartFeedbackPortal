@@ -1,0 +1,213 @@
+{
+  "name": "Smart Feedback Classifier",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "feedback-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "9ca146ea-5a38-43c2-a717-1dd94e6549bb",
+      "name": "Webhook - Feedback Created",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        -320
+      ],
+      "webhookId": "feedback-created"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract feedback data from webhook payload\nconst record = $input.item.json.record;\n\n// Get the description text\nconst description = record.description.toLowerCase();\n\n// Keywords for classification\nconst urgentKeywords = ['urgent', 'critical', 'asap', 'immediately', 'emergency'];\nconst bugKeywords = ['broken', 'error', 'bug', 'crash', 'not working', 'issue', 'problem', 'fail'];\nconst featureKeywords = ['feature', 'enhancement', 'suggestion', 'improve', 'add', 'new'];\n\n// Initialize category and priority\nlet category = 'General';\nlet priority = 'Low';\n\n// Check for bugs\nconst hasBugKeyword = bugKeywords.some(keyword => description.includes(keyword));\nconst hasUrgentKeyword = urgentKeywords.some(keyword => description.includes(keyword));\nconst hasFeatureKeyword = featureKeywords.some(keyword => description.includes(keyword));\n\n// Classify\nif (hasBugKeyword) {\n  category = 'Bug';\n  priority = hasUrgentKeyword ? 'High' : 'Medium';\n} else if (hasUrgentKeyword) {\n  category = 'Urgent';\n  priority = 'High';\n} else if (hasFeatureKeyword) {\n  category = 'Feature';\n  priority = 'Low';\n} else {\n  category = 'General';\n  priority = 'Low';\n}\n\n// Return the classified data\nreturn {\n  id: record.id,\n  category: category,\n  priority: priority,\n  status: 'Processed',\n  original_description: record.description\n};"
+      },
+      "id": "e4ac5be5-4d90-445d-9c39-0ba2255bc3e6",
+      "name": "Classify Feedback",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $vars.SUPABASE_URL }}/rest/v1/feedback",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $json.id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $vars.SUPABASE_SERVICE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $vars.SUPABASE_SERVICE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "category",
+              "value": "={{ $json.category }}"
+            },
+            {
+              "name": "priority",
+              "value": "={{ $json.priority }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4cbf647e-0038-4461-aa99-b548116af490",
+      "name": "Update Supabase Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        272,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"id\": $json.id, \"category\": $json.category, \"priority\": $json.priority } }}",
+        "options": {}
+      },
+      "id": "4bfb2e9f-0916-4676-a152-403e2fe02c32",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        480,
+        -320
+      ]
+    }
+  ],
+  "pinData": {
+    "Webhook - Feedback Created": [
+      {
+        "json": {
+          "headers": {
+            "host": "andhikark.app.n8n.cloud",
+            "user-agent": "pg_net/0.19.5",
+            "content-length": "353",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "2406:da1a:6b0:f617:fb2:964b:65b5:f513",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "IN",
+            "cf-ray": "9c56fa6d9213408d-BOM",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "2406:da1a:6b0:f617:fb2:964b:65b5:f513, 172.69.95.3",
+            "x-forwarded-host": "andhikark.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-46-d85945c6c-gvlwz",
+            "x-is-trusted": "yes",
+            "x-real-ip": "2406:da1a:6b0:f617:fb2:964b:65b5:f513"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "type": "INSERT",
+            "table": "feedback",
+            "record": {
+              "id": "e256e6f0-8f8c-4695-b55d-a67592994e6c",
+              "title": "Test from SQL",
+              "status": "New",
+              "user_id": "ab36b049-ca8c-40e6-b530-502112c419ce",
+              "category": null,
+              "priority": null,
+              "created_at": "2026-01-29T07:22:24.000256+00:00",
+              "description": "urgent crash asap"
+            },
+            "schema": "public",
+            "old_record": null
+          },
+          "webhookUrl": "https://andhikark.app.n8n.cloud/webhook/feedback-webhook",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook - Feedback Created": {
+      "main": [
+        [
+          {
+            "node": "Classify Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Feedback": {
+      "main": [
+        [
+          {
+            "node": "Update Supabase Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Supabase Record": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "3ceb052f-19ba-46cb-9a82-8d422f30c0ca",
+  "meta": {
+    "instanceId": "1f208d9eda8e18ca6af72b7eea142701e158c17eb99f75f7c1192119af215b14"
+  },
+  "id": "dSXFtVAzSgS0dJuDMZb6k",
+  "tags": []
+}
