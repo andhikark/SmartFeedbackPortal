@@ -113,8 +113,6 @@ USING (true);
 ALTER PUBLICATION supabase_realtime ADD TABLE feedback;
 ```
 
-📸 **Screenshot suggestion**:
-Supabase Dashboard → Database → Policies → `feedback` table showing the three policies above.
 
 ---
 
